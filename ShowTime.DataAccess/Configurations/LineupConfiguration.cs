@@ -20,10 +20,13 @@ namespace ShowTime.DataAccess.Configurations
                 .HasMaxLength(100);
             builder.HasOne(l => l.Festival)
                 .WithMany(f => f.Lineups)
-                .HasForeignKey(l => l.FestivalId);
+                .HasForeignKey(l => l.FestivalId)
+                .OnDelete(DeleteBehavior.Cascade);
             builder.HasOne(l => l.Artist)
                 .WithMany(a => a.Lineups)
-                .HasForeignKey(l => l.ArtistId);
+                .HasForeignKey(l => l.ArtistId)
+                .OnDelete(DeleteBehavior.Cascade);
+
         }
     }
 }

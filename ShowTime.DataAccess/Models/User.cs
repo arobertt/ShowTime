@@ -12,5 +12,6 @@ namespace ShowTime.DataAccess.Models
         public string Email { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
         public int Role { get; set; }  
+        public ICollection<Booking> Bookings { get; set; } = new List<Booking>();
     }
 }

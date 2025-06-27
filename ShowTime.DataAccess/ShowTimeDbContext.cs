@@ -22,8 +22,8 @@ namespace ShowTime.DataAccess
         public DbSet<User> Users { get; set; } = null!;
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            modelBuilder.ApplyConfigurationsFromAssembly(typeof(ShowTimeDbContext).Assembly);
-            
+            base.OnModelCreating(modelBuilder);
+
             new ArtistConfiguration().Configure(modelBuilder.Entity<Artist>());
             new FestivalConfiguration().Configure(modelBuilder.Entity<Festival>());
             new LineupConfiguration().Configure(modelBuilder.Entity<Lineup>());

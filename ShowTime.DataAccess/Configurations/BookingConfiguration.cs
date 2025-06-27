@@ -21,10 +21,13 @@ namespace ShowTime.DataAccess.Configurations
                 .IsRequired();
             builder.HasOne(b => b.Festival)
                 .WithMany(f => f.Bookings)
-                .HasForeignKey(b => b.FestivalId);
+                .HasForeignKey(b => b.FestivalId)
+                .OnDelete(DeleteBehavior.Cascade);
             builder.HasOne(b => b.User)
                 .WithMany(u => u.Bookings)
-                .HasForeignKey(b => b.UserId);
+                .HasForeignKey(b => b.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
         }
     }
 }
