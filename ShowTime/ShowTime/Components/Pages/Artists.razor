@@ -1,0 +1,49 @@
+﻿@page "/Artists"
+@using ShowTime.BusinessLogic.Abstractions
+@using ShowTime.BusinessLogic.DTOs
+@inject IArtistService ArtistService
+
+<h3>Artists</h3>
+<EditForm Model="newArtist" OnSubmit="AddArtist" FormName="AddArtistForm">
+	<label for="name">Name:</label>
+	<InputText id="name" @bind-Value="newArtist.Name" class="form-control" />
+	<label for="genre">Genre:</label>
+	<InputText id="genre" @bind-Value="newArtist.Genre" class="form-control" />
+	<label for="image">Image:</label>
+	<InputText id="image" @bind-Value="newArtist.ImageUrl" class="form-control" />
+	<button type="submit" class="btn btn-primary">Add Artist</button>
+</EditForm>
+@if (artists.Count == 0)
+{
+	<p>No artists found.</p>
+}
+
+else
+{
+	<div class="row">
+		@foreach (var artist in artists)
+		{
+			<p>@artist.Name</p>
+			<p>@artist.Genre</p>
+			<img src="@artist.ImageUrl" alt="@artist.Name" style="width: 100%; height: 100%;" />
+		}
+	</div>
+}
+
+
+@code {
+	private IList<ArtistGetDto> artists = new List<ArtistGetDto>();
+	[SupplyParameterFromForm]
+	private ArtistCreateDto newArtist { get; set; } = new();
+
+	protected override async Task OnInitializedAsync()
+	{
+		artists = await ArtistService.GetAllArtistsAsync();
+	}
+
+	private async Task AddArtist()
+	{
+		await ArtistService.AddArtistAsync(newArtist);
+		newArtist = new();
+	}
+}
