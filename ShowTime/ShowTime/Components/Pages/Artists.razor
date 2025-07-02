@@ -5,45 +5,102 @@
 
 <h3>Artists</h3>
 <EditForm Model="newArtist" OnSubmit="AddArtist" FormName="AddArtistForm">
-	<label for="name">Name:</label>
-	<InputText id="name" @bind-Value="newArtist.Name" class="form-control" />
-	<label for="genre">Genre:</label>
-	<InputText id="genre" @bind-Value="newArtist.Genre" class="form-control" />
-	<label for="image">Image:</label>
-	<InputText id="image" @bind-Value="newArtist.ImageUrl" class="form-control" />
-	<button type="submit" class="btn btn-primary">Add Artist</button>
+    <label for="name">Name:</label>
+    <InputText id="name" @bind-Value="newArtist.Name" class="form-control" />
+    <label for="genre">Genre:</label>
+    <InputText id="genre" @bind-Value="newArtist.Genre" class="form-control" />
+    <label for="image">Image:</label>
+    <InputText id="image" @bind-Value="newArtist.ImageUrl" class="form-control" />
+    <button type="submit" class="btn btn-primary">Add Artist</button>
 </EditForm>
 @if (artists.Count == 0)
 {
-	<p>No artists found.</p>
+    <p>No artists found.</p>
 }
 
 else
 {
-	<div class="row">
-		@foreach (var artist in artists)
-		{
-			<p>@artist.Name</p>
-			<p>@artist.Genre</p>
-			<img src="@artist.ImageUrl" alt="@artist.Name" style="width: 100%; height: 100%;" />
-		}
-	</div>
+    <div class="position-relative">
+        <div id="artistCarousel" class="carousel slide" data-bs-ride="carousel">
+            <div class="carousel-inner">
+                @for (int i = 0; i < artists.Count; i += 3)
+                {
+                    var chunk = artists.Skip(i).Take(3).ToList();
+                    <div class="carousel-item @(i == 0 ? "active" : "")">
+                        <div class="row">
+                            @foreach (var artist in chunk)
+                            {
+                                <div class="col-md-4">
+                                    <div class="card mb-4 shadow-sm position-relative h-100">
+                                        <img src="@artist.ImageUrl" class="card-img-top" alt="@artist.Name" style="height: 200px; object-fit: cover;" />
+                                        <div class="card-body">
+                                            <h5 class="card-title">@artist.Name</h5>
+                                            <p class="card-text">@artist.Genre</p>
+                                        </div>
+                                        <button class="btn btn-sm btn-danger position-absolute bottom-0 end-0 m-2" @onclick="@(() => DeleteArtist(artist.Id))">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Carousel controls outside the carousel area -->
+            <button class="carousel-control-prev custom-carousel-btn" type="button" data-bs-target="#artistCarousel" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon"></span>
+            </button>
+            <button class="carousel-control-next custom-carousel-btn" type="button" data-bs-target="#artistCarousel" data-bs-slide="next">
+                <span class="carousel-control-next-icon"></span>
+            </button>
+        </div>
+    </div>
+
+    <style>
+        .custom-carousel-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 50px;
+            height: 50px;
+            background-color: black;
+            border: none;
+            z-index: 2;
+        }
+
+        .carousel-control-prev.custom-carousel-btn {
+            left: -60px;
+        }
+
+        .carousel-control-next.custom-carousel-btn {
+            right: -60px;
+        }
+    </style>
+
 }
 
 
 @code {
-	private IList<ArtistGetDto> artists = new List<ArtistGetDto>();
-	[SupplyParameterFromForm]
-	private ArtistCreateDto newArtist { get; set; } = new();
+    private IList<ArtistGetDto> artists = new List<ArtistGetDto>();
+    [SupplyParameterFromForm]
+    private ArtistCreateDto newArtist { get; set; } = new();
 
-	protected override async Task OnInitializedAsync()
-	{
-		artists = await ArtistService.GetAllArtistsAsync();
-	}
+    protected override async Task OnInitializedAsync()
+    {
+        artists = await ArtistService.GetAllArtistsAsync();
+    }
 
-	private async Task AddArtist()
-	{
-		await ArtistService.AddArtistAsync(newArtist);
-		newArtist = new();
-	}
+    private async Task AddArtist()
+    {
+        await ArtistService.AddArtistAsync(newArtist);
+        newArtist = new();
+    }
+
+    private async Task DeleteArtist(int id)
+    {
+        await ArtistService.DeleteArtistAsync(id);
+        artists = await ArtistService.GetAllArtistsAsync();
+    }
 }
