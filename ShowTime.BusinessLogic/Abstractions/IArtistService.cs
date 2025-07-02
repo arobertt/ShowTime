@@ -13,7 +13,7 @@ namespace ShowTime.BusinessLogic.Abstractions
         Task<ArtistGetDto?> GetArtistByIdAsync(int id);
         Task<IList<ArtistGetDto>> GetAllArtistsAsync();
         Task AddArtistAsync(ArtistCreateDto artist);
-        Task UpdateArtistAsync(ArtistCreateDto artist, int id);
+        Task UpdateArtistAsync(ArtistUpdateDto artist, int id);
         Task DeleteArtistAsync(int id);
     }
 }

@@ -10,7 +10,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
-    .AddInteractiveWebAssemblyComponents();
+.AddInteractiveServerComponents()
+.AddInteractiveWebAssemblyComponents();
 
 var conenectionString = builder.Configuration.GetConnectionString("ShowTimeContext");
 builder.Services.AddDbContext<ShowTimeDbContext>(options =>
@@ -38,7 +39,9 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseAntiforgery();
 
+
 app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode()
     .AddInteractiveWebAssemblyRenderMode();
 
 app.Run();

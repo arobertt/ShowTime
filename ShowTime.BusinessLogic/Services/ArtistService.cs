@@ -92,7 +92,7 @@ namespace ShowTime.BusinessLogic.Services
                 throw new Exception($"An error occurred while retrieving the artist with ID {id}.", ex);
             }
         }
-        public async Task UpdateArtistAsync(ArtistCreateDto artistCreateDto, int id)
+        public async Task UpdateArtistAsync(ArtistUpdateDto artistUpdateDto, int id)
         {
             try
             {
@@ -102,9 +102,9 @@ namespace ShowTime.BusinessLogic.Services
                     throw new KeyNotFoundException($"Artist with ID {id} not found.");
                 }
 
-                artist.Name = artistCreateDto.Name ?? artist.Name;
-                artist.Genre = artistCreateDto.Genre ?? artist.Name;
-                artist.ImageUrl = artistCreateDto.ImageUrl ?? artist.ImageUrl;
+                artist.Name = string.IsNullOrEmpty(artistUpdateDto.Name) ? artist.Name : artistUpdateDto.Name;
+                artist.Genre = string.IsNullOrEmpty(artistUpdateDto.Genre) ? artist.Genre: artistUpdateDto.Genre;
+                artist.ImageUrl = string.IsNullOrEmpty(artistUpdateDto.ImageUrl) ? artist.ImageUrl : artistUpdateDto.ImageUrl;
 
                 var updatedArtist = await _artistRepository.UpdateAsync(artist);
             }
