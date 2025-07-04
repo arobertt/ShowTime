@@ -14,20 +14,32 @@ namespace ShowTime.DataAccess.Repositories
         {
         }
 
-        public override Task<IEnumerable<Festival>> GetAllAsync()
+        public async override Task<IEnumerable<Festival>> GetAllAsync()
         {
             try
             {
-                return base.GetAllAsync();
+                return await _context.Festivals
+                    .Include(f => f.Artists)
+                    .ToListAsync();
+
             }
             catch (Exception ex)
             {
                 throw new Exception($"Error retrieving all festivals with artists and bookings: {ex.Message}", ex);
             }
         }
-        public override Task<Festival?> GetByIdAsync(int id)
+        public async override Task<Festival?> GetByIdAsync(int id)
         {
-            return base.GetByIdAsync(id);
+            try
+            {
+                return await _context.Festivals
+                    .Include(f => f.Artists)
+                    .FirstOrDefaultAsync(f => f.Id == id);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error retrieving the festival with artists and bookings: {ex.Message}", ex);
+            }
         }
     }
 }
