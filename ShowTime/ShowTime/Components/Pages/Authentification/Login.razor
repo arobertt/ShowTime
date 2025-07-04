@@ -1,0 +1,54 @@
+﻿@page "/login"
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using ShowTime.BusinessLogic.Abstractions
+@using ShowTime.BusinessLogic.DTOs
+@using System.Security.Claims
+@using ShowTime.DataAccess.Models
+@inject IUserService UserService
+@inject NavigationManager navigationManager
+
+<EditForm Model="loginInfo" OnValidSubmit="Authenticate" FormName="LoginForm">
+	<DataAnnotationsValidator />
+	<div class="form-group">
+		<label for="email">Email</label>
+		<InputText id="username" class="form-control" @bind-Value="loginInfo.Email" />
+		<ValidationMessage For="() => loginInfo.Email" />
+	</div>
+	<div class="form-group">
+		<label for="password">Password</label>
+		<InputText id="email" class="form-control" @bind-Value="loginInfo.Password" />
+		<ValidationMessage For="() => loginInfo.Password" />
+	</div>
+
+	<button type="submit" class="btn btn-primary">Login</button>
+</EditForm>
+
+@code {
+	[SupplyParameterFromForm]
+	private LoginDto loginInfo { get; set; } = new();
+	[CascadingParameter]
+	private HttpContext HttpContext { get; set; } = null!;
+	private async Task Authenticate()
+	{
+		try
+		{
+			var response = await UserService.LoginAsync(loginInfo);
+			var claims = new List<Claim>
+			{
+				new(ClaimTypes.Email, loginInfo.Email),
+				new(ClaimTypes.Role, Enum.GetName(typeof(Role), response.Role) ?? nameof(Role.User))
+			};
+
+			var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+			var claimsPrincial = new ClaimsPrincipal(claimsIdentity);
+
+			await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincial);
+			navigationManager.NavigateTo("/");
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine();
+		}
+	}
+}

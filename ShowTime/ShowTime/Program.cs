@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using ShowTime.BusinessLogic.Abstractions;
 using ShowTime.BusinessLogic.Services;
@@ -13,12 +14,23 @@ builder.Services.AddRazorComponents()
 .AddInteractiveServerComponents()
 .AddInteractiveWebAssemblyComponents();
 
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(options =>
+    {
+        options.Cookie.Name = "auth-token";
+        options.LoginPath = "/login";
+        options.AccessDeniedPath = "/access-denied";
+        options.ExpireTimeSpan = TimeSpan.FromHours(1);
+    });
+
 var conenectionString = builder.Configuration.GetConnectionString("ShowTimeContext");
 builder.Services.AddDbContext<ShowTimeDbContext>(options =>
     options.UseSqlServer(conenectionString));
 
 builder.Services.AddTransient<IRepository<Artist>, BaseRepository<Artist>>();
 builder.Services.AddTransient<IArtistService, ArtistService>();
+builder.Services.AddTransient<IRepository<User>, BaseRepository<User>>();
+builder.Services.AddTransient<IUserService, UserService>();
 
 var app = builder.Build();
 
@@ -38,7 +50,8 @@ app.UseHttpsRedirection();
 
 app.UseStaticFiles();
 app.UseAntiforgery();
-
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode()

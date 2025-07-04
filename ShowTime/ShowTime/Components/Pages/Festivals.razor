@@ -1,0 +1,14 @@
+﻿@page "/festivals"
+@using Microsoft.AspNetCore.Authorization
+@using ShowTime.BusinessLogic.Abstractions
+@using ShowTime.BusinessLogic.DTOs
+@using ShowTime.DataAccess.Models
+@rendermode InteractiveServer
+@attribute [StreamRendering]
+@attribute [Authorize(Roles = "Administrator")]
+
+<PageTitle>Festivals</PageTitle>
+
+<h1>Festivals</h1>
+
+Discover:
