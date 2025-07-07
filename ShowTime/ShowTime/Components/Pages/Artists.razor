@@ -1,4 +1,5 @@
 ﻿@page "/artists"
+@using Microsoft.AspNetCore.Components.Authorization
 @using ShowTime.BusinessLogic.Abstractions
 @using ShowTime.BusinessLogic.DTOs
 @inject IArtistService ArtistService
@@ -7,9 +8,13 @@
 
 <div class="featured-header d-flex align-items-center justify-content-between">
 	<h3 class="featured-title">Featured Artists:</h3>
-	<button class="add-button" @onclick="ShowCreateForm">
-		<i class="bi bi-plus-lg center"></i>
-	</button>
+	<AuthorizeView Roles="Admin">
+		 <Authorized>
+			<button class="add-button" @onclick="ShowCreateForm">
+				<i class="bi bi-plus-lg center"></i>
+			</button>
+		 </Authorized>
+	 </AuthorizeView>
 </div>
 
 @if (isFormVisible)
@@ -73,12 +78,16 @@ else
 														<h3 class="artist-name">@artist.Name</h3>
 													</div>
 													<div class="action-buttons">
-														<button class="btn-action" @onclick="() => ShowEditForm(artist)" title="Edit">
-															<i class="bi bi-pencil "></i>
-														</button>
-														<button class="btn-action" @onclick="() => ConfirmDeleteAsync(artist.Id)" title="Delete">
-															<i class="bi bi-trash "></i>
-														</button>
+														<AuthorizeView Roles="Admin">
+															<Authorized>
+																<button class="btn-action" @onclick="() => ShowEditForm(artist)" title="Edit">
+																	<i class="bi bi-pencil "></i>
+																</button>
+																<button class="btn-action" @onclick="() => ConfirmDeleteAsync(artist.Id)" title="Delete">
+																	<i class="bi bi-trash "></i>
+																</button>
+															</Authorized>
+														</AuthorizeView>
 													</div>
 												</div>
 											</div>

@@ -13,34 +13,39 @@ namespace ShowTime.BusinessLogic.Services
 {
     public class UserService: IUserService
     {
-        private readonly IRepository<User> _userRepository;
-        public UserService(IRepository<User> userRepository)
+        private readonly IUserRepository _userRepository;
+        public UserService(IUserRepository userRepository)
         {
             _userRepository = userRepository;
         }
 
         public async Task<LoginResponseDto> LoginAsync(LoginDto loginDto)
         {
-            var user = await ((UserRepository)_userRepository).GetByEmailAsync(loginDto.Email);
-            if (user == null || user.Password != loginDto.Password) // tine minte sa dai hash
+            var user = await _userRepository.GetByEmailAsync(loginDto.Email);
+            if (user == null)
                 return null;
-
+            bool isPasswordValid = BCrypt.Net.BCrypt.Verify(loginDto.Password, user.Password);
+            if (!isPasswordValid)
+                return null;
             return new LoginResponseDto
             {
                 Email = user.Email,
-                Role = 0
+                Role = 0,
             };
         }
         public async Task<LoginResponseDto> RegisterAsync(RegisterDto registerDto)
         {
-            var existingUser = await ((UserRepository)_userRepository).GetByEmailAsync(registerDto.Email);
+            var existingUser = await _userRepository.GetByEmailAsync(registerDto.Email);
             if (existingUser != null)
                 return null;
+
+            string hashedPassword = BCrypt.Net.BCrypt.HashPassword(registerDto.Password);
+            registerDto.Password = hashedPassword;
 
             var newUser = new User
             {
                 Email = registerDto.Email,
-                Password = registerDto.Password, // tine minte sa dai hash
+                Password = registerDto.Password, 
                 Role = 0
             };
 

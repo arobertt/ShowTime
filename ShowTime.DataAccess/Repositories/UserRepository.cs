@@ -8,7 +8,7 @@ using ShowTime.DataAccess.Models;
 
 namespace ShowTime.DataAccess.Repositories
 {
-    public class UserRepository : BaseRepository<User>
+    public class UserRepository : BaseRepository<User>, IUserRepository
     {
         public UserRepository(ShowTimeDbContext context) : base(context)
         {

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.JSInterop;
 using ShowTime.BusinessLogic.Abstractions;
 using ShowTime.BusinessLogic.Services;
 using ShowTime.Components;
@@ -14,6 +15,8 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddRazorComponents()
 .AddInteractiveServerComponents()
 .AddInteractiveWebAssemblyComponents();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddHttpClient();
 
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
     .AddCookie(options =>
@@ -36,6 +39,8 @@ builder.Services.AddTransient<IRepository<Artist>, BaseRepository<Artist>>();
 builder.Services.AddTransient<IArtistService, ArtistService>();
 builder.Services.AddTransient<IRepository<User>, BaseRepository<User>>();
 builder.Services.AddTransient<IUserService, UserService>();
+builder.Services.AddTransient<IUserRepository, UserRepository>();
+
 
 var app = builder.Build();
 
@@ -65,7 +70,7 @@ app.MapRazorComponents<App>()
 app.MapGet("/logout", async (HttpContext context) =>
 {
     await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-    context.Response.Redirect("/", true); // This triggers a full reload
+    context.Response.Redirect("/");
 });
 
 app.Run();

@@ -1,14 +1,10 @@
-﻿@page "/festivals"
+﻿@page "/users"
 @using Microsoft.AspNetCore.Authorization
 @using ShowTime.BusinessLogic.Abstractions
 @using ShowTime.BusinessLogic.DTOs
 @using ShowTime.DataAccess.Models
 @rendermode InteractiveServer
 @attribute [StreamRendering]
-@attribute [Authorize(Roles = "Admin, User")]
+@attribute [Authorize(Roles = "Admin")]
 
-<PageTitle>Festivals</PageTitle>
-
-<h1>Festivals</h1>
-
-Discover:
+<h3>Users</h3>	

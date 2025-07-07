@@ -2,15 +2,15 @@
 @using Microsoft.AspNetCore.Authentication.Cookies
 @using Microsoft.AspNetCore.Components.Authorization
 @rendermode InteractiveServer
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
 
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4 py-3">
     <div class="container-fluid d-flex justify-content-between align-items-center">
-        <!-- Left: Logo & Title -->
         <NavLink class="navbar-brand d-flex align-items-center gap-2" href="/">
             <span class="fs-5 fw-semibold">Showtime</span>
         </NavLink>
 
-        <!-- Right: Navigation Buttons -->
         <div class="d-flex gap-3">
             <NavLink class="btn btn-outline-light d-flex align-items-center gap-2" href="/" Match="NavLinkMatch.All">
                 <i class="bi bi-house-fill"></i> <span>Home</span>
@@ -24,7 +24,6 @@
                 <i class="bi bi-music-note-beamed"></i> <span>Festivals</span>
             </NavLink>
 
-            <!-- Account Dropdown -->
             <div class="dropdown">
                 <button class="btn btn-outline-light dropdown-toggle d-flex align-items-center gap-2" type="button" id="accountDropdown" data-bs-toggle="dropdown" aria-expanded="false">
                     <i class="bi bi-person-circle"></i>
@@ -36,8 +35,20 @@
                             <li><a class="dropdown-item" href="/login"><i class="bi bi-box-arrow-in-right"></i> Login</a></li>
                             <li><a class="dropdown-item" href="/register"><i class="bi bi-person-plus"></i> Register</a></li>
                         </NotAuthorized>
+
                         <Authorized>
-                            <li><a class="dropdown-item" href="/tickets"><i class="bi bi-ticket-perforated"></i> Tickets</a></li>
+                            <AuthorizeView Roles="Admin">
+                                <Authorized Context="adminContext">
+                                    <li><a class="dropdown-item" href="/users"><i class="bi bi-people"></i> Users</a></li>
+                                </Authorized>
+                            </AuthorizeView>
+
+                            <AuthorizeView Roles="User">
+                                <Authorized Context="userContext">
+                                    <li><a class="dropdown-item" href="/tickets"><i class="bi bi-ticket-perforated"></i> Tickets</a></li>
+                                </Authorized>
+                            </AuthorizeView>
+
                             <li>
                                 <a class="dropdown-item text-danger" href="/logout">
                                     <i class="bi bi-box-arrow-right"></i> Logout
@@ -45,6 +56,7 @@
                             </li>
                         </Authorized>
                     </AuthorizeView>
+
                 </ul>
             </div>
         </div>
