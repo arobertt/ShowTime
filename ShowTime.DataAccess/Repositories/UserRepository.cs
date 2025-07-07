@@ -41,5 +41,19 @@ namespace ShowTime.DataAccess.Repositories
                 throw new Exception($"Error retrieving the user with bookings: {ex.Message}", ex);
             }
         }
+
+        public async Task<User?> GetByEmailAsync(string email)
+        {
+            try
+            {
+                return await _context.Users
+                    .Include(u => u.Bookings)
+                    .FirstOrDefaultAsync(u => u.Email == email);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error retrieving user by email: {ex.Message}", ex);
+            }
+        }
     }
 }

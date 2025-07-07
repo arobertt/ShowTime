@@ -1,0 +1,62 @@
+﻿@page "/register"
+@using Microsoft.AspNetCore.Authentication
+@using Microsoft.AspNetCore.Authentication.Cookies
+@using ShowTime.BusinessLogic.Abstractions
+@using ShowTime.BusinessLogic.DTOs
+@using System.Security.Claims
+@using ShowTime.DataAccess.Models
+@inject IUserService UserService
+@inject NavigationManager NavigationManager
+
+<h3>Register</h3>
+
+<EditForm Model="@registerDto" OnValidSubmit="@HandleRegister" FormName="RegisterForm">
+    <DataAnnotationsValidator />
+    <div>
+        <label>Email:</label>
+        <InputText @bind-Value="registerDto.Email" class="form-control" />
+        <ValidationMessage For="() => registerDto.Email" />
+    </div>
+    <div>
+        <label>Password:</label>
+        <InputText @bind-Value="registerDto.Password" type="password" class="form-control" />
+        <ValidationMessage For="() => registerDto.Password" />
+    </div>
+    <div>
+        <label>Confirm Password:</label>
+        <InputText @bind-Value="registerDto.ConfirmedPassword" type="password" class="form-control" />
+        <ValidationMessage For="() => registerDto.ConfirmedPassword" />
+    </div>
+    <button type="submit" class="btn btn-primary mt-2">Register</button>
+</EditForm>
+
+@code {
+    [SupplyParameterFromForm]
+    private RegisterDto registerDto{ get; set; } = new();
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = null!;
+
+    private async Task HandleRegister()
+    {
+        try
+        {
+            var response = await UserService.RegisterAsync(registerDto);
+            var claims = new List<Claim>
+            {
+                new(ClaimTypes.Email, registerDto.Email),
+                new(ClaimTypes.Role, Enum.GetName(typeof(Role), response.Role) ?? nameof(Role.User))
+            };
+
+            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+            var claimsPrincial = new ClaimsPrincipal(claimsIdentity);
+
+            await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincial);
+            NavigationManager.NavigateTo("/");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine(ex.Message);
+        }
+    }
+
+}

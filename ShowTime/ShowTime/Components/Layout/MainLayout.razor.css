@@ -1,9 +1,3 @@
-.page {
-    position: relative;
-    display: flex;
-    flex-direction: column;
-}
-
 main {
     flex: 1;
 }
@@ -94,3 +88,27 @@ main {
         right: 0.75rem;
         top: 0.5rem;
     }
+/* Account dropdown customizations */
+.dropdown-menu {
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    min-width: 180px;
+}
+
+    .dropdown-menu .dropdown-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 500;
+        padding: 0.6rem 1rem;
+        transition: background-color 0.2s;
+    }
+
+        .dropdown-menu .dropdown-item:hover {
+            background-color: #f1f1f1;
+            color: #000;
+        }
+
+        .dropdown-menu .dropdown-item.text-danger:hover {
+            background-color: #ffe6e6;
+        }
