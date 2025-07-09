@@ -40,6 +40,8 @@ builder.Services.AddTransient<IArtistService, ArtistService>();
 builder.Services.AddTransient<IRepository<User>, BaseRepository<User>>();
 builder.Services.AddTransient<IUserService, UserService>();
 builder.Services.AddTransient<IUserRepository, UserRepository>();
+builder.Services.AddTransient<IFestivalService, FestivalService>();
+builder.Services.AddTransient<IRepository<Festival>, BaseRepository<Festival>>();
 
 
 var app = builder.Build();
@@ -70,7 +72,20 @@ app.MapRazorComponents<App>()
 app.MapGet("/logout", async (HttpContext context) =>
 {
     await context.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-    context.Response.Redirect("/");
+    await context.Response.WriteAsync
+    (@"
+        <html>
+            <head>
+                <meta http-equiv='refresh' content='0;url=/' />
+                <script>
+                    window.location.replace('/');
+                </script>
+            </head>
+            <body>
+                <p>Logging out...</p>
+            </body>
+        </html>"
+    );
 });
 
 app.Run();

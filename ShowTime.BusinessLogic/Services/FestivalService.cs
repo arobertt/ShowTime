@@ -25,6 +25,7 @@ namespace ShowTime.BusinessLogic.Services
                 {
                     Name = festival.Name,
                     Location = festival.Location,
+                    Capacity = festival.Capacity,
                     StartDate = festival.StartDate,
                     EndDate = festival.EndDate,
                     SplashArt = festival.SplashArt

@@ -1,6 +1,7 @@
 ﻿@page "/register"
 @using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Authentication.Cookies
+@using Microsoft.AspNetCore.Components.Authorization
 @using ShowTime.BusinessLogic.Abstractions
 @using ShowTime.BusinessLogic.DTOs
 @using System.Security.Claims
@@ -8,9 +9,27 @@
 @inject IUserService UserService
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthProvider
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        if (authState.User.Identity?.IsAuthenticated == true)
+        {
+            NavigationManager.NavigateTo("/");
+        }
+    }
+}
+
 <div class="d-flex justify-content-center align-items-center" style="margin: 5%">
     <div class="card p-4 shadow-sm" style="max-width: 400px; width: 100%;">
         <h3 class="mb-4 text-center">Register</h3>
+
+        @if (!string.IsNullOrEmpty(errorMessage))
+        {
+            <div class="alert alert-danger text-center">@errorMessage</div>
+        }
 
         <EditForm Model="@registerDto" OnValidSubmit="@HandleRegister" FormName="RegisterForm">
             <DataAnnotationsValidator />
@@ -51,28 +70,30 @@
     private RegisterDto registerDto{ get; set; } = new();
     [CascadingParameter]
     private HttpContext HttpContext { get; set; } = null!;
+    private string errorMessage = string.Empty;
 
     private async Task HandleRegister()
     {
+        errorMessage = string.Empty;
         try
         {
             var response = await UserService.RegisterAsync(registerDto);
-			if (response == null)
-			{
-				Console.WriteLine("Registration failed.");
-			}
+            if (response == null)
+            {
+                errorMessage = "An account with this email already exists.";
+                return;
+            }
             var claims = new List<Claim>
             {
                 new(ClaimTypes.Email, registerDto.Email),
-                new(ClaimTypes.Role, Enum.GetName(typeof(Role), response.Role) ?? nameof(Role.User))
+                new(ClaimTypes.Role, response.Role == 0 ? "User" : "Admin")
             };
 
             var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
             var claimsPrincial = new ClaimsPrincipal(claimsIdentity);
 
             await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, claimsPrincial);
-            NavigationManager.NavigateTo("/", forceLoad: true);
-            //await JSRuntime.InvokeVoidAsync("fullReloadTo", "/");
+            HttpContext.Response.Redirect("/");
         }
         catch (Exception ex)
         {

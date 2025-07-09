@@ -1,14 +1,289 @@
 ﻿@page "/festivals"
-@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
 @using ShowTime.BusinessLogic.Abstractions
 @using ShowTime.BusinessLogic.DTOs
-@using ShowTime.DataAccess.Models
+@inject IFestivalService FestivalService
+@inject IJSRuntime JSRuntime
 @rendermode InteractiveServer
-@attribute [StreamRendering]
-@attribute [Authorize(Roles = "Admin, User")]
 
-<PageTitle>Festivals</PageTitle>
+<div class="featured-header d-flex align-items-center justify-content-between" style="margin-bottom: 2rem">
+    <h3 class="featured-title">Upcoming Festivals:</h3>
+    <AuthorizeView Roles="Admin">
+        <Authorized>
+            <button class="add-button" @onclick="ShowCreateForm">
+                <i class="bi bi-plus-lg center"></i>
+            </button>
+        </Authorized>
+    </AuthorizeView>
+</div>
 
-<h1>Festivals</h1>
+@if (isFormVisible)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">@((editingFestivalId == null) ? "Add Festival" : "Edit Festival")</h5>
+                <button type="button" class="btn-close" @onclick="HideForm"></button>
+            </div>
+            <div class="modal-body">
+                    <EditForm Model="festivalFormModel" OnValidSubmit="HandleValidSubmit" FormName="AddEditFestivalForm">
+                    <DataAnnotationsValidator />
 
-Discover:
+                    <label for="name">Name:</label>
+                    <InputText id="name" @bind-Value="festivalFormModel.Name" class="form-control mb-2" />
+                    <ValidationMessage For="@(() => festivalFormModel.Name)" />
+
+                    <label for="location">Location:</label>
+                    <InputText id="location" @bind-Value="festivalFormModel.Location" class="form-control mb-2" />
+                    <ValidationMessage For="@(() => festivalFormModel.Location)" />
+
+                    <label for="splashArt">splashArt:</label>
+                    <InputText id="splashArt" @bind-Value="festivalFormModel.SplashArt" class="form-control mb-2" />
+                    <ValidationMessage For="@(() => festivalFormModel.SplashArt)" />
+                        
+                    <label for="capacity">Capacity:</label>
+                    <InputNumber id="capacity" @bind-Value="festivalFormModel.Capacity" class="form-control mb-2" />
+                    <ValidationMessage For="@(() => festivalFormModel.Capacity)" />
+                    
+                     <label for="startDate">Start Date:</label>
+                    <InputDate id="startDate" @bind-Value="festivalFormModel.StartDate" class="form-control mb-2" />
+                    <ValidationMessage For="@(() => festivalFormModel.StartDate)" />
+
+                    <label for="endDate">End Date:</label>
+                    <InputDate id="endDate" @bind-Value="festivalFormModel.EndDate" class="form-control mb-2" />
+                    <ValidationMessage For="@(() => festivalFormModel.EndDate)" /> *
+
+                    <button type="submit" class="btn btn-primary mt-2">
+                        @(editingFestivalId == null ? "Add Festival" : "Save Changes")
+                    </button>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+}
+
+@if (festivals.Count == 0)
+{
+    <p>No festivals found.</p>
+}
+else
+{
+    <div class="festival-scroll-wrapper">
+        <div class="festival-list-container">
+            @for (int i = 0; i < festivals.Count; i++)
+            {
+                var festival = festivals[i];
+                bool isEven = i % 2 == 0;
+                <div class="festival-card d-flex flex-wrap mb-4 @(isEven ? "flex-row" : "flex-row-reverse")">
+                    <div class="festival-image-container">
+                        <img src="@festival.SplashArt" class="festival-image" alt="@festival.Name" />
+                    </div>
+                    <div class="festival-details p-3 d-flex flex-column justify-content-between">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <h5 class="mb-0 festival-name">@festival.Name</h5>
+                            <AuthorizeView Roles="Admin">
+                                <Authorized>
+                                    <div class="action-buttons">
+                                        <button class="btn-action" @onclick="() => ShowEditForm(festival)" title="Edit">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn-action" @onclick="() => ConfirmDeleteAsync(festival.Id)" title="Delete">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </Authorized>
+                            </AuthorizeView>
+                        </div>
+
+                        <p class="festival-location mb-1"><strong>Location:</strong> @festival.Location</p>
+                        <p class="festival-capacity mb-1"><strong>Capacity:</strong> @festival.Capacity</p>
+                        <p class="festival-dates mb-3">
+                            <strong>Dates:</strong>
+                            @festival.StartDate.ToString("dd MMM yyyy") - @festival.EndDate.ToString("dd MMM yyyy")
+                        </p>
+
+                        <div class="d-flex gap-2 mt-auto">
+                            <button class="btn btn-outline-primary btn-sm">View Lineup</button>
+                            <button class="btn btn-success btn-sm">Buy Ticket</button>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private FestivalCreateDto festivalFormModel { get; set; } = new();
+    private int? editingFestivalId = null;
+    private bool isFormVisible = false;
+    private IList<FestivalGetDto> festivals = new List<FestivalGetDto>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        festivals = await FestivalService.GetAllFestivalsAsync();
+    }
+
+    private void ShowCreateForm()
+    {
+        editingFestivalId = null;
+        festivalFormModel = new FestivalCreateDto()
+        {
+            StartDate = DateTime.Now,
+            EndDate = DateTime.Now
+        };
+        
+        isFormVisible = true;
+    }
+
+    private void ShowEditForm(FestivalGetDto festival)
+    {
+        editingFestivalId = festival.Id;
+        festivalFormModel = new FestivalCreateDto
+        {
+            Name = festival.Name,
+            Location = festival.Location,
+            SplashArt = festival.SplashArt,
+            Capacity = festival.Capacity,
+            StartDate = festival.StartDate,
+            EndDate = festival.EndDate
+
+        };
+        isFormVisible = true;
+    }
+
+    private async Task HandleValidSubmit()
+    {
+        if (editingFestivalId == null)
+        {
+            await FestivalService.AddFestivalAsync(festivalFormModel);
+        }
+        else
+        {
+            await FestivalService.UpdateFestivalAsync(festivalFormModel, editingFestivalId.Value);
+        }
+
+        festivals = await FestivalService.GetAllFestivalsAsync();
+        isFormVisible = false;
+        festivalFormModel = new FestivalCreateDto();
+        editingFestivalId = null;
+    }
+
+    private async Task DeleteFestival(int id)
+    {
+        await FestivalService.DeleteFestivalAsync(id);
+        festivals = await FestivalService.GetAllFestivalsAsync();
+    }
+
+    private async Task ConfirmDeleteAsync(int festivalId)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", "Are you sure you want to delete this festival?");
+        if (confirmed)
+        {
+            await DeleteFestival(festivalId);
+        }
+    }
+
+    private void HideForm()
+    {
+        isFormVisible = false;
+        festivalFormModel = new FestivalCreateDto();
+        editingFestivalId = null;
+    }
+}
+
+<style>
+    .festival-scroll-wrapper {
+        max-height: 70vh;
+        overflow-y: auto;
+        padding-right: 10px;
+        scroll-behavior: smooth;
+    }
+
+    .festival-list-container {
+        max-width: 100%;
+        margin: 0 auto;
+        display: flex;
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .festival-card {
+        min-height: 280px;
+        border: 1px solid #dee2e6;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        background: white;
+        display: flex;
+        width: 100%;
+        max-width: 950px;
+        margin-inline: auto;
+    }
+
+    .festival-image-container {
+        flex: 2;
+        max-width: 66.66%;
+        overflow: hidden;
+    }
+
+    .festival-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
+    .festival-details {
+        flex: 1;
+        background: #f8f9fa;
+        min-width: 33.33%;
+    }
+
+    .festival-name {
+        font-size: 1.3rem;
+        font-weight: 500;
+        color: #2c3e50;
+    }
+
+    .festival-location {
+        font-size: 0.95rem;
+        margin-bottom: 0.75rem;
+        color: #444;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 8px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+
+    .festival-card:hover .action-buttons {
+        opacity: 1;
+    }
+
+    .btn-action {
+        width: 36px;
+        height: 36px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        color: #212529;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(10px);
+        font-size: 0.95rem;
+    }
+
+        .btn-action:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.4);
+            transform: scale(1.1);
+        }
+
+</style>

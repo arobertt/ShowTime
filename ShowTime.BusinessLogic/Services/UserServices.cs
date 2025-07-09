@@ -19,7 +19,7 @@ namespace ShowTime.BusinessLogic.Services
             _userRepository = userRepository;
         }
 
-        public async Task<LoginResponseDto> LoginAsync(LoginDto loginDto)
+        public async Task<LoginResponseDto?> LoginAsync(LoginDto loginDto)
         {
             var user = await _userRepository.GetByEmailAsync(loginDto.Email);
             if (user == null)
@@ -30,10 +30,10 @@ namespace ShowTime.BusinessLogic.Services
             return new LoginResponseDto
             {
                 Email = user.Email,
-                Role = 0,
+                Role = user.Role,
             };
         }
-        public async Task<LoginResponseDto> RegisterAsync(RegisterDto registerDto)
+        public async Task<LoginResponseDto?> RegisterAsync(RegisterDto registerDto)
         {
             var existingUser = await _userRepository.GetByEmailAsync(registerDto.Email);
             if (existingUser != null)
