@@ -11,7 +11,7 @@ using System.Threading.Tasks;
 
 namespace ShowTime.BusinessLogic.Services
 {
-    public class UserService: IUserService
+    public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
         public UserService(IUserRepository userRepository)
@@ -45,7 +45,7 @@ namespace ShowTime.BusinessLogic.Services
             var newUser = new User
             {
                 Email = registerDto.Email,
-                Password = registerDto.Password, 
+                Password = registerDto.Password,
                 Role = 0
             };
 
@@ -56,5 +56,42 @@ namespace ShowTime.BusinessLogic.Services
                 Role = 0
             };
         }
+
+        public async Task<IList<UserGetDto>> GetAllUsersAsync()
+        {
+            var users = await _userRepository.GetAllAsync();
+            return users.Select(a => new UserGetDto
+            {
+                Id = a.Id,
+                Email = a.Email,
+                Role = a.Role == 0 ? "User" : "Admin"
+            }).ToList();
+        }
+
+        public async Task DeleteUserAsync(String email)
+        {
+            try
+            {
+                var user = await _userRepository.GetByEmailAsync(email);
+                if (user == null)
+                {
+                    throw new KeyNotFoundException($"User with Email {email} not found.");
+                }
+            }
+            catch(Exception ex)
+            {
+                throw new Exception($"An error occurred while deleting the artist with Email: {email}.", ex);
+            }
+
+        }
+
+        public async Task<int> GetUserIdByEmailAsync(string email)
+        {
+            var user = await _userRepository.GetByEmailAsync(email);
+            if (user == null)
+                return -1;
+            return user.Id;
+        }
+
     }
 }

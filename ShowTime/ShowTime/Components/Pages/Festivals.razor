@@ -2,8 +2,12 @@
 @using Microsoft.AspNetCore.Components.Authorization
 @using ShowTime.BusinessLogic.Abstractions
 @using ShowTime.BusinessLogic.DTOs
+@using System.Security.Claims
 @inject IFestivalService FestivalService
+@inject IBookingService BookingService
+@inject IUserService UserService
 @inject IJSRuntime JSRuntime
+@inject AuthenticationStateProvider AuthProvider
 @rendermode InteractiveServer
 
 <div class="featured-header d-flex align-items-center justify-content-between" style="margin-bottom: 2rem">
@@ -20,48 +24,48 @@
 @if (isFormVisible)
 {
     <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">@((editingFestivalId == null) ? "Add Festival" : "Edit Festival")</h5>
-                <button type="button" class="btn-close" @onclick="HideForm"></button>
-            </div>
-            <div class="modal-body">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">@((editingFestivalId == null) ? "Add Festival" : "Edit Festival")</h5>
+                    <button type="button" class="btn-close" @onclick="HideForm"></button>
+                </div>
+                <div class="modal-body">
                     <EditForm Model="festivalFormModel" OnValidSubmit="HandleValidSubmit" FormName="AddEditFestivalForm">
-                    <DataAnnotationsValidator />
+                        <DataAnnotationsValidator />
 
-                    <label for="name">Name:</label>
-                    <InputText id="name" @bind-Value="festivalFormModel.Name" class="form-control mb-2" />
-                    <ValidationMessage For="@(() => festivalFormModel.Name)" />
+                        <label for="name">Name:</label>
+                        <InputText id="name" @bind-Value="festivalFormModel.Name" class="form-control mb-2" />
+                        <ValidationMessage For="@(() => festivalFormModel.Name)" />
 
-                    <label for="location">Location:</label>
-                    <InputText id="location" @bind-Value="festivalFormModel.Location" class="form-control mb-2" />
-                    <ValidationMessage For="@(() => festivalFormModel.Location)" />
+                        <label for="location">Location:</label>
+                        <InputText id="location" @bind-Value="festivalFormModel.Location" class="form-control mb-2" />
+                        <ValidationMessage For="@(() => festivalFormModel.Location)" />
 
-                    <label for="splashArt">splashArt:</label>
-                    <InputText id="splashArt" @bind-Value="festivalFormModel.SplashArt" class="form-control mb-2" />
-                    <ValidationMessage For="@(() => festivalFormModel.SplashArt)" />
-                        
-                    <label for="capacity">Capacity:</label>
-                    <InputNumber id="capacity" @bind-Value="festivalFormModel.Capacity" class="form-control mb-2" />
-                    <ValidationMessage For="@(() => festivalFormModel.Capacity)" />
-                    
-                     <label for="startDate">Start Date:</label>
-                    <InputDate id="startDate" @bind-Value="festivalFormModel.StartDate" class="form-control mb-2" />
-                    <ValidationMessage For="@(() => festivalFormModel.StartDate)" />
+                        <label for="splashArt">splashArt:</label>
+                        <InputText id="splashArt" @bind-Value="festivalFormModel.SplashArt" class="form-control mb-2" />
+                        <ValidationMessage For="@(() => festivalFormModel.SplashArt)" />
 
-                    <label for="endDate">End Date:</label>
-                    <InputDate id="endDate" @bind-Value="festivalFormModel.EndDate" class="form-control mb-2" />
-                    <ValidationMessage For="@(() => festivalFormModel.EndDate)" /> *
+                        <label for="capacity">Capacity:</label>
+                        <InputNumber id="capacity" @bind-Value="festivalFormModel.Capacity" class="form-control mb-2" />
+                        <ValidationMessage For="@(() => festivalFormModel.Capacity)" />
 
-                    <button type="submit" class="btn btn-primary mt-2">
-                        @(editingFestivalId == null ? "Add Festival" : "Save Changes")
-                    </button>
-                </EditForm>
+                        <label for="startDate">Start Date:</label>
+                        <InputDate id="startDate" @bind-Value="festivalFormModel.StartDate" class="form-control mb-2" />
+                        <ValidationMessage For="@(() => festivalFormModel.StartDate)" />
+
+                        <label for="endDate">End Date:</label>
+                        <InputDate id="endDate" @bind-Value="festivalFormModel.EndDate" class="form-control mb-2" />
+                        <ValidationMessage For="@(() => festivalFormModel.EndDate)" /> 
+
+                        <button type="submit" class="btn btn-primary mt-2">
+                            @(editingFestivalId == null ? "Add Festival" : "Save Changes")
+                        </button>
+                    </EditForm>
+                </div>
             </div>
         </div>
     </div>
-</div>
 }
 
 @if (festivals.Count == 0)
@@ -100,13 +104,29 @@ else
                         <p class="festival-location mb-1"><strong>Location:</strong> @festival.Location</p>
                         <p class="festival-capacity mb-1"><strong>Capacity:</strong> @festival.Capacity</p>
                         <p class="festival-dates mb-3">
-                            <strong>Dates:</strong>
+                            <strong>Dates:</strong> 
                             @festival.StartDate.ToString("dd MMM yyyy") - @festival.EndDate.ToString("dd MMM yyyy")
                         </p>
 
                         <div class="d-flex gap-2 mt-auto">
                             <button class="btn btn-outline-primary btn-sm">View Lineup</button>
-                            <button class="btn btn-success btn-sm">Buy Ticket</button>
+                            <AuthorizeView>
+                                <NotAuthorized>
+                                    <a class="btn btn-secondary btn-sm" href="/login"> Buy Ticket</a>
+                                </NotAuthorized>
+                                <Authorized>
+                                    <AuthorizeView Roles="Admin" Context="AdminContext">
+                                        <Authorized>
+                                            <a class="btn btn-secondary btn-sm" href="/Bookings"> See Bookings</a>
+                                        </Authorized>
+                                    </AuthorizeView>
+                                    <AuthorizeView Roles="User" Context="UserContext">
+                                        <Authorized>
+                                            <button class="btn btn-success btn-sm" @onclick="() => BuyTicket(festival.Id, festival.Location)">Buy Ticket</button>
+                                        </Authorized>
+                                    </AuthorizeView>
+                                </Authorized>
+                            </AuthorizeView>
                         </div>
                     </div>
                 </div>
@@ -120,9 +140,22 @@ else
     private int? editingFestivalId = null;
     private bool isFormVisible = false;
     private IList<FestivalGetDto> festivals = new List<FestivalGetDto>();
+    private BookingDto bookingDto = new();
+    private string? userEmail;
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var userLoggedIn = authState.User;
+
+        if (userLoggedIn.Identity?.IsAuthenticated == true)
+        {
+            userEmail = userLoggedIn.FindFirst(ClaimTypes.Email)?.Value;
+        }
+        else
+        {
+            userEmail = "Not logged in";
+        }
         festivals = await FestivalService.GetAllFestivalsAsync();
     }
 
@@ -134,7 +167,7 @@ else
             StartDate = DateTime.Now,
             EndDate = DateTime.Now
         };
-        
+
         isFormVisible = true;
     }
 
@@ -191,6 +224,24 @@ else
         isFormVisible = false;
         festivalFormModel = new FestivalCreateDto();
         editingFestivalId = null;
+    }
+
+    private async Task BuyTicket(int festivalId, string type)
+    {
+
+        bookingDto.FestivalId = festivalId;
+        bookingDto.Type = type;
+        bookingDto.UserId = (int) await UserService.GetUserIdByEmailAsync(userEmail);
+        bookingDto.Price = 100;
+        try
+        {
+            await BookingService.AddBookingAsync(bookingDto);
+            bookingDto = new();
+        }
+        catch(Exception ex)
+        {
+			Console.WriteLine($"Error while booking ticket: {ex.Message}");
+        }
     }
 }
 

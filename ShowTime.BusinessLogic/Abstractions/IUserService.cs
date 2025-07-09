@@ -13,5 +13,7 @@ namespace ShowTime.BusinessLogic.Abstractions
     {
         Task<LoginResponseDto> LoginAsync(LoginDto loginDto);
         Task<LoginResponseDto> RegisterAsync(RegisterDto registerDto);
+        Task<IList<UserGetDto>> GetAllUsersAsync();
+        Task<int> GetUserIdByEmailAsync(string name);
     }
 }

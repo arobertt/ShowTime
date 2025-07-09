@@ -42,6 +42,8 @@ builder.Services.AddTransient<IUserService, UserService>();
 builder.Services.AddTransient<IUserRepository, UserRepository>();
 builder.Services.AddTransient<IFestivalService, FestivalService>();
 builder.Services.AddTransient<IRepository<Festival>, BaseRepository<Festival>>();
+builder.Services.AddTransient<IBookingService, BookingService>();
+builder.Services.AddTransient<IRepository<Booking>, BaseRepository<Booking>>();
 
 
 var app = builder.Build();
