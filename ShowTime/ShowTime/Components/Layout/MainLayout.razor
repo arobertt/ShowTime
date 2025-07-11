@@ -3,18 +3,16 @@
 
 <div class="page">
 
-    <div>
+
+    <header class="sticky-top z-3">
         <NavMenu />
-    </div>
+    </header>
 
-    <div class="container">
-
-        <main>
-            <article class="content px-4 py-3">
-                @Body
-            </article>
-        </main>
-    </div>
+    <main class="container mt-4">
+        <article class="content px-2 px-md-4 py-3">
+            @Body
+        </article>
+    </main>
 </div>
 
 <div id="blazor-error-ui">
@@ -22,3 +20,4 @@
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
 </div>
+

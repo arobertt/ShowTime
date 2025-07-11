@@ -24,10 +24,13 @@ namespace ShowTime.BusinessLogic.Services
             {
                 var booking = new Booking
                 {
+                    Id = bookingDto.Id,
                     FestivalId = bookingDto.FestivalId,
                     UserId = bookingDto.UserId,
                     Type = bookingDto.Type,
-                    Price = bookingDto.Price
+                    Price = bookingDto.Price,
+                    Quantity = bookingDto.Quantity 
+
                 };
                 await _bookingRepository.AddAsync(booking);
             }
@@ -44,10 +47,12 @@ namespace ShowTime.BusinessLogic.Services
                 var bookings = await _bookingRepository.GetAllAsync();
                 return bookings.Select(b => new BookingDto
                 {
+                    Id = b.Id,
                     UserId = b.UserId,
                     FestivalId = b.FestivalId,
                     Type = b.Type,
-                    Price = b.Price
+                    Price = b.Price,
+                    Quantity = b.Quantity 
                 }).ToList();
             }
             catch (Exception ex)

@@ -1,23 +1,20 @@
-﻿@page "/tickets"
+﻿@page "/bookings"
 @using Microsoft.AspNetCore.Authorization
-@using Microsoft.AspNetCore.Components.Authorization
 @using ShowTime.BusinessLogic.Abstractions
 @using ShowTime.BusinessLogic.DTOs
 @using ShowTime.BusinessLogic.Services
 @using ShowTime.DataAccess.Models
-@using System.Security.Claims
 @rendermode InteractiveServer
 @attribute [StreamRendering]
-@attribute [Authorize]
+@attribute [Authorize(Roles = "Admin")]
 @inject IBookingService BookingService
 @inject IUserService UserService
-@inject IJSRuntime JSRuntime
-@inject AuthenticationStateProvider AuthProvider
 @inject IFestivalService FestivalService
+@inject IJSRuntime JSRuntime
 
 <div class="d-flex align-items-center justify-content-between mb-4">
     <div class="d-flex align-items-center gap-2">
-        <h3 class="mb-0">Your Tickets</h3>
+        <h3 class="mb-0">Bookings Manager</h3>
         <div class="dropdown position-relative">
             <button class="btn filter-icon-button" @onclick="ToggleFilterDropdown">
                 <i class="bi bi-funnel-fill"></i>
@@ -26,12 +23,14 @@
             {
                 var orderId = "OrderId";
                 var festival = "Festival";
+                var email = "Email";
                 var type = "Type";
                 var quantity = "Quantity";
 
                 <ul class="dropdown-menu show" style="position: absolute; z-index: 1050;">
                     <li><button class="dropdown-item" @onclick="() => ApplyFilter(orderId)">Filter by Order ID</button></li>
                     <li><button class="dropdown-item" @onclick="() => ApplyFilter(festival)">Filter by Festival</button></li>
+                    <li><button class="dropdown-item" @onclick="() => ApplyFilter(email)">Filter by Email</button></li>
                     <li><button class="dropdown-item" @onclick="() => ApplyFilter(type)">Filter by Type</button></li>
                     <li><button class="dropdown-item" @onclick="() => ApplyFilter(quantity)">Filter by Quantity</button></li>
                 </ul>
@@ -49,7 +48,7 @@
 }
 else if (!bookings.Any())
 {
-    <div class="alert alert-info">You have no tickets.</div>
+    <div class="alert alert-info">No bookings found.</div>
 }
 else
 {
@@ -86,7 +85,6 @@ else
 @code {
     private IList<BookingDto> bookings = new List<BookingDto>();
     private IList<BookingDto> allBookings = new List<BookingDto>();
-    private string UserEmail { get; set; } = string.Empty;
     private Dictionary<int, string> festivalNames = new();
     private Dictionary<int, string> userEmails = new();
     private bool isFilterDropdownVisible = false;
@@ -104,23 +102,15 @@ else
         {
             "OrderId" => allBookings.OrderBy(b => b.Id).ToList(),
             "Festival" => allBookings.OrderBy(b => festivalNames[b.FestivalId]).ToList(),
+            "Email" => allBookings.OrderBy(b => userEmails[b.UserId]).ToList(),
             "Type" => allBookings.OrderBy(b => b.Type).ToList(),
             "Quantity" => allBookings.OrderBy(b => b.Quantity).ToList(),
             _ => allBookings.ToList()
         };
     }
-
     protected override async Task OnInitializedAsync()
     {
-        var authState = await AuthProvider.GetAuthenticationStateAsync();
-        var userLoggedIn = authState.User;
-        UserEmail = userLoggedIn.FindFirst(ClaimTypes.Email)!.Value;
-
-        var userId = await UserService.GetUserIdByEmailAsync(UserEmail!);
-        var allUserBookings = await BookingService.GetAllBookingsAsync();
-        allBookings = allUserBookings.Where(b => b.UserId == userId).ToList();
-        bookings = new List<BookingDto>(allBookings);
-
+        await LoadBookingsAsync();
         foreach (var booking in bookings)
         {
             if (!festivalNames.ContainsKey(booking.FestivalId))
@@ -137,6 +127,11 @@ else
         }
     }
 
+    private async Task LoadBookingsAsync()
+    {
+        allBookings = await BookingService.GetAllBookingsAsync();
+        bookings = new List<BookingDto>(allBookings);
+    }
 }
 
 <style>
@@ -166,3 +161,4 @@ else
         cursor: pointer;
     }
 </style>
+

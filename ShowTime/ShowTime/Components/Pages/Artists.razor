@@ -7,15 +7,34 @@
 @rendermode InteractiveServer
 
 <div class="featured-header d-flex align-items-center justify-content-between">
-	<h3 class="featured-title">Featured Artists:</h3>
+	<div class="d-flex align-items-center gap-2">
+		<h3 class="mb-0">Featured Artists</h3>
+		<div class="dropdown position-relative">
+			<button class="btn filter-icon-button" @onclick="ToggleFilterDropdown">
+				<i class="bi bi-funnel-fill"></i>
+			</button>
+			@if (isFilterDropdownVisible)
+			{
+				var name = "Name";
+                var genre = "Genre";
+				<ul class="dropdown-menu show" style="position: absolute; z-index: 1050;">
+					<li><button class="dropdown-item" @onclick="() => ApplyFilter(name)">Filter by Name</button></li>
+					<li><button class="dropdown-item" @onclick="() => ApplyFilter(genre)">Filter by Genre</button></li>
+				</ul>
+			}
+		</div>
+	</div>
+
 	<AuthorizeView Roles="Admin">
-		 <Authorized>
+		<Authorized>
 			<button class="add-button" @onclick="ShowCreateForm">
 				<i class="bi bi-plus-lg center"></i>
 			</button>
-		 </Authorized>
-	 </AuthorizeView>
+		</Authorized>
+	</AuthorizeView>
 </div>
+
+
 
 @if (isFormVisible)
 {
@@ -53,7 +72,7 @@
 
 @if (artists.Count == 0)
 {
-	<p>No artists found.</p>
+	<div class="alert alert-info">No artists found.</div>
 }
 else
 {
@@ -80,12 +99,14 @@ else
 													<div class="action-buttons">
 														<AuthorizeView Roles="Admin">
 															<Authorized>
-																<button class="btn-action" @onclick="() => ShowEditForm(artist)" title="Edit">
-																	<i class="bi bi-pencil "></i>
-																</button>
-																<button class="btn-action" @onclick="() => ConfirmDeleteAsync(artist.Id)" title="Delete">
-																	<i class="bi bi-trash "></i>
-																</button>
+																<div class="action-buttons">
+																	<button class="btn-action" @onclick="() => ShowEditForm(artist)" title="Edit">
+																		<i class="bi bi-pencil"></i>
+																	</button>
+																	<button class="btn-action" @onclick="() => ConfirmDeleteAsync(artist.Id)" title="Delete">
+																		<i class="bi bi-trash"></i>
+																	</button>
+																</div>
 															</Authorized>
 														</AuthorizeView>
 													</div>
@@ -121,7 +142,8 @@ else
 
 	protected override async Task OnInitializedAsync()
 	{
-		artists = await ArtistService.GetAllArtistsAsync();
+		allArtists = await ArtistService.GetAllArtistsAsync();
+		artists = new List<ArtistGetDto>(allArtists);
 	}
 
 	private void ShowCreateForm()
@@ -154,7 +176,8 @@ else
 			await ArtistService.UpdateArtistAsync(artistFormModel, editingArtistId.Value);
 		}
 
-		artists = await ArtistService.GetAllArtistsAsync();
+		allArtists = await ArtistService.GetAllArtistsAsync();
+		artists = new List<ArtistGetDto>(allArtists);
 		isFormVisible = false;
 		artistFormModel = new ArtistUpdateDto();
 		editingArtistId = null;
@@ -163,8 +186,10 @@ else
 	private async Task DeleteArtist(int id)
 	{
 		await ArtistService.DeleteArtistAsync(id);
-		artists = await ArtistService.GetAllArtistsAsync();
+		allArtists = await ArtistService.GetAllArtistsAsync();
+		artists = new List<ArtistGetDto>(allArtists);
 	}
+
 
 	private async Task ConfirmDeleteAsync(int artistId)
 	{
@@ -181,4 +206,29 @@ else
 		artistFormModel = new ArtistUpdateDto();
 		editingArtistId = null;
 	}
+
+	private bool isFilterDropdownVisible = false;
+	private string selectedFilter = string.Empty;
+	private IList<ArtistGetDto> allArtists = new List<ArtistGetDto>(); // To store unfiltered list
+
+	private void ToggleFilterDropdown()
+	{
+		isFilterDropdownVisible = !isFilterDropdownVisible;
+	}
+
+	private async Task ApplyFilter(string filterType)
+	{
+		selectedFilter = filterType;
+		isFilterDropdownVisible = false;
+
+		if (filterType == "Name")
+		{
+			artists = allArtists.OrderBy(a => a.Name).ToList();
+		}
+		else if (filterType == "Genre")
+		{
+			artists = allArtists.OrderBy(a => a.Genre).ToList();
+		}
+	}
+
 }

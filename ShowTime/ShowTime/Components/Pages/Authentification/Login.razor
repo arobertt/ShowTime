@@ -89,7 +89,7 @@
 				new(ClaimTypes.Email, loginInfo.Email),
 				new(ClaimTypes.Role, response.Role == 0 ? "User" : "Admin")
 			};
-
+			var help = response.Role;
 			var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
 			var claimsPrincipal = new ClaimsPrincipal(claimsIdentity);
 

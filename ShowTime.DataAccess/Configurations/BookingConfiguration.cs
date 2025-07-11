@@ -14,7 +14,7 @@ namespace ShowTime.DataAccess.Configurations
         public void Configure(EntityTypeBuilder<Booking> builder)
         {
             builder.ToTable("Bookings");
-            builder.HasKey(b => new {b.FestivalId, b.UserId});
+            builder.HasKey(b => b.Id);
             builder.Property(b => b.FestivalId)
                 .IsRequired();
             builder.Property(b => b.UserId)

@@ -1,11 +1,14 @@
 ﻿@using Microsoft.AspNetCore.Authentication
 @using Microsoft.AspNetCore.Authentication.Cookies
 @using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthProvider
+@inject NavigationManager NavigationManager
 @rendermode InteractiveServer
 @inject HttpClient Http
 @inject IJSRuntime JSRuntime
 
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4 py-3">
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark px-4 py-3 sticky-top">
     <div class="container-fluid d-flex justify-content-between align-items-center">
         <NavLink class="navbar-brand d-flex align-items-center gap-2" href="/">
             <span class="fs-5 fw-semibold">Showtime</span>
@@ -37,19 +40,21 @@
                         </NotAuthorized>
 
                         <Authorized>
+                            <li class="dropdown-item-text d-flex align-items-center border-bottom pb-2 mb-2" style="pointer-events: none;">
+                                <i class="bi bi-person-badge me-2 text-success" "></i>
+                                <span class="ms-1" style="padding-left: 4px">@userEmail</span>
+                            </li>
                             <AuthorizeView Roles="Admin">
                                 <Authorized Context="adminContext">
                                     <li><a class="dropdown-item" href="/users"><i class="bi bi-people"></i> Users</a></li>
                                     <li><a class="dropdown-item" href="/bookings"><i class="bi bi-ticket-perforated"></i> Bookings</a></li>
                                 </Authorized>
                             </AuthorizeView>
-
                             <AuthorizeView Roles="User">
                                 <Authorized Context="userContext">
                                     <li><a class="dropdown-item" href="/tickets"><i class="bi bi-ticket-perforated"></i> Tickets</a></li>
                                 </Authorized>
                             </AuthorizeView>
-
                             <li>
                                 <a class="dropdown-item text-danger" href="/logout">
                                     <i class="bi bi-box-arrow-right"></i> Logout
@@ -57,10 +62,32 @@
                             </li>
                         </Authorized>
                     </AuthorizeView>
-
                 </ul>
+
             </div>
         </div>
     </div>
 </nav>
 
+@code {
+    string? userEmail = string.Empty;
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var userLoggedIn = authState.User;
+
+        if (userLoggedIn.Identity?.IsAuthenticated == true)
+        {
+            userEmail = userLoggedIn.FindFirst(ClaimTypes.Email)?.Value;
+            userEmail = userEmail!.Contains("@") ? userEmail[..userEmail.IndexOf("@")] : userEmail;
+        }
+    }
+    private string GetAccountButtonClass()
+    {
+        var uri = NavigationManager.Uri.ToLower();
+        string[] accountPaths = ["/login", "/register", "/users", "/bookings", "/tickets"];
+        return accountPaths.Any(path => uri.Contains(path))
+            ? "btn btn-outline-light dropdown-toggle d-flex align-items-center gap-2 active"
+            : "btn btn-outline-light dropdown-toggle d-flex align-items-center gap-2";
+    }
+}

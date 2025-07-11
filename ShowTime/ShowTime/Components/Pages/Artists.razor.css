@@ -90,6 +90,31 @@
     flex-grow: 1;
 }
 
+.filter-icon-button {
+    background: none;
+    border: none;
+    padding: 0.25rem 0.5rem;
+    color: #333;
+    font-size: 1.25rem;
+}
+
+    .filter-icon-button:focus,
+    .filter-icon-button:active,
+    .filter-icon-button:hover {
+        background-color: transparent !important;
+        box-shadow: none !important;
+        outline: none !important;
+        color: #000;
+    }
+
+.dropdown-menu {
+    min-width: 160px;
+    padding: 0.5rem 0;
+}
+
+.dropdown-item {
+    cursor: pointer;
+}
 .artist-name {
     color: white;
     font-size: 1.75rem;
@@ -99,7 +124,6 @@
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
 }
 
-/* Buttons (hidden by default) */
 .action-buttons {
     display: flex;
     gap: 12px;
@@ -197,11 +221,10 @@
 .action-buttons {
     display: flex;
     gap: 8px;
-    opacity: 0;
-    transition: opacity 0.3s ease;
+
+
 }
 
-/* Show on hover */
 .artist-card:hover .action-buttons {
     opacity: 1;
 }
@@ -235,6 +258,11 @@
     display: block;
 }
 
+.btn-action:hover {
+    background: rgba(255, 255, 255, 0.2);
+    border-color: rgba(255, 255, 255, 0.4);
+    transform: scale(1.1);
+}
     .add-button:hover {
         background: #ced4da;
         border-color: #6c757d;

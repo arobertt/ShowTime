@@ -53,7 +53,7 @@ namespace ShowTime.BusinessLogic.Services
             return new LoginResponseDto
             {
                 Email = newUser.Email,
-                Role = 0
+                Role = newUser.Role
             };
         }
 
@@ -68,21 +68,34 @@ namespace ShowTime.BusinessLogic.Services
             }).ToList();
         }
 
-        public async Task DeleteUserAsync(String email)
+        public async Task DeleteUserAsync(int id)
         {
-            try
-            {
-                var user = await _userRepository.GetByEmailAsync(email);
+            try {
+                var user = await _userRepository.GetByIdAsync(id);
                 if (user == null)
                 {
-                    throw new KeyNotFoundException($"User with Email {email} not found.");
+                    throw new KeyNotFoundException($"User with ID {id} not found.");
                 }
+                await _userRepository.DeleteAsync(id);
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
-                throw new Exception($"An error occurred while deleting the artist with Email: {email}.", ex);
+                throw new Exception($"An error occurred while deleting the user with ID {id}.", ex);
             }
 
+        }
+
+        public async Task<UserGetDto?> GetUserByIdAsync(int id)
+        {
+            var user = await _userRepository.GetByIdAsync(id);
+            if (user == null)
+                return null;
+            return new UserGetDto
+            {
+                Id = user.Id,
+                Email = user.Email,
+                Role = user.Role == 0 ? "User" : "Admin"
+            };
         }
 
         public async Task<int> GetUserIdByEmailAsync(string email)

@@ -66,7 +66,8 @@ namespace ShowTime.BusinessLogic.Services
                     Location = f.Location,
                     StartDate = f.StartDate,
                     EndDate = f.EndDate,
-                    SplashArt = f.SplashArt
+                    SplashArt = f.SplashArt,
+                    Capacity = f.Capacity
                 }).ToList();
             }
             catch (Exception ex)
@@ -82,7 +83,7 @@ namespace ShowTime.BusinessLogic.Services
                 var festival = await _fesivalRepository.GetByIdAsync(id);
                 if (festival == null)
                 {
-                    return null; // or throw an exception if preferred
+                    return null; 
                 }
                 return new FestivalGetDto
                 {
@@ -91,7 +92,8 @@ namespace ShowTime.BusinessLogic.Services
                     Location = festival.Location,
                     StartDate = festival.StartDate,
                     EndDate = festival.EndDate,
-                    SplashArt = festival.SplashArt
+                    SplashArt = festival.SplashArt,
+                    Capacity = festival.Capacity
                 };
             }
             catch (Exception ex)
@@ -113,7 +115,8 @@ namespace ShowTime.BusinessLogic.Services
                     Location = f.Location,
                     StartDate = f.StartDate,
                     EndDate = f.EndDate,
-                    SplashArt = f.SplashArt
+                    SplashArt = f.SplashArt,
+                    Capacity = f.Capacity
                 }).ToList();
             }
             catch (Exception ex)
@@ -122,21 +125,23 @@ namespace ShowTime.BusinessLogic.Services
             }
         }
 
-        public async Task UpdateFestivalAsync(FestivalCreateDto festival, int id)
+        public async Task UpdateFestivalAsync(FestivalCreateDto festivalDto, int id)
         {
             try
             {
-                var existingFestival = await _fesivalRepository.GetByIdAsync(id);
-                if (existingFestival == null)
+                var festival = await _fesivalRepository.GetByIdAsync(id);
+                if (festival == null)
                 {
                     throw new KeyNotFoundException($"Festival with ID {id} not found.");
                 }
-                existingFestival.Name = festival.Name;
-                existingFestival.Location = festival.Location;
-                existingFestival.StartDate = festival.StartDate;
-                existingFestival.EndDate = festival.EndDate;
-                existingFestival.SplashArt = festival.SplashArt;
-                await _fesivalRepository.UpdateAsync(existingFestival);
+                festival.Name = string.IsNullOrWhiteSpace(festivalDto.Name) ? festival.Name : festivalDto.Name;
+                festival.Location = string.IsNullOrWhiteSpace(festivalDto.Location) ? festival.Location : festivalDto.Location;
+                festival.StartDate = festivalDto.StartDate == default ? festival.StartDate : festivalDto.StartDate;
+                festival.EndDate = festivalDto.EndDate == default ? festival.EndDate : festivalDto.EndDate;
+                festival.SplashArt = string.IsNullOrWhiteSpace(festivalDto.SplashArt) ? festival.SplashArt : festivalDto.SplashArt;
+                festival.Capacity = festivalDto.Capacity < 0 ? festival.Capacity : festivalDto.Capacity;
+
+                var updatdFestival = await _fesivalRepository.UpdateAsync(festival);
             }
             catch (Exception ex)
             {

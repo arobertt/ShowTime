@@ -6,5 +6,143 @@
 @rendermode InteractiveServer
 @attribute [StreamRendering]
 @attribute [Authorize(Roles = "Admin")]
+@inject IUserService UserService
+@inject IJSRuntime JSRuntime
 
-<h3>Users</h3>	
+@if (users == null)
+{
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+}
+else if (!users.Any())
+{
+    <div class="alert alert-info">No users found.</div>
+}
+else
+{
+    <div>
+        <div class="d-flex align-items-center justify-content-between mb-4">
+            <div class="d-flex align-items-center gap-2">
+                <h3 class="mb-0">User Management</h3>
+                <div class="dropdown position-relative">
+                    <button class="btn filter-icon-button" @onclick="ToggleFilterDropdown">
+                        <i class="bi bi-funnel-fill"></i>
+                    </button>
+                    @if (isFilterDropdownVisible)
+                    {
+                        var id = "Id";
+                        var email = "Email";
+                        var role = "Role";
+                        <ul class="dropdown-menu show" style="position: absolute; z-index: 1050;">
+                            <li><button class="dropdown-item" @onclick="() => ApplyFilter(id)">Filter by ID</button></li>
+                            <li><button class="dropdown-item" @onclick="() => ApplyFilter(email)">Filter by Name</button></li>
+                            <li><button class="dropdown-item" @onclick="() => ApplyFilter(role)">Filter by Role</button></li>
+                        </ul>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <table class="table table-hover table-bordered">
+            <thead class="table-dark">
+                <tr>
+                    <th>ID</th>
+                    <th>Email</th>
+                    <th>Role</th>
+                    <th class="text-center">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var user in users)
+                {
+                    <tr>
+                        <td>@user.Id</td>
+                        <td>@user.Email</td>
+                        <td>@user.Role</td>
+                        <td class="text-center">
+                            <button class="btn btn-sm btn-danger" @onclick="() => ConfirmDelete(user.Id)">
+                                <i class="bi bi-trash" style="display: contents"></i>
+                            </button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}
+
+@code {
+    private IList<UserGetDto> users = new List<UserGetDto>();
+    private IList<UserGetDto> allUsers = new List<UserGetDto>();
+
+    private bool isFilterDropdownVisible = false;
+
+    private void ToggleFilterDropdown()
+    {
+        isFilterDropdownVisible = !isFilterDropdownVisible;
+    }
+
+    private void ApplyFilter(string filterType)
+    {
+        isFilterDropdownVisible = false;
+
+        users = filterType switch
+        {
+            "Id" => allUsers.OrderBy(u => u.Id).ToList(),
+            "Email" => allUsers.OrderBy(u => u.Email).ToList(),
+            "Role" => allUsers.OrderBy(u => u.Role).ToList(),
+            _ => allUsers.ToList()
+        };
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadUsersAsync();
+    }
+
+    private async Task LoadUsersAsync()
+    {
+        allUsers = await UserService.GetAllUsersAsync();
+        users = new List<UserGetDto>(allUsers);
+    }
+
+
+    private async Task ConfirmDelete(int id)
+    {
+        bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"Are you sure you want to delete user with id: {id}?");
+        if (confirmed)
+        {
+            await UserService.DeleteUserAsync(id);
+            await LoadUsersAsync();
+        }
+    }
+}
+
+<style>
+    .filter-icon-button {
+        background: none;
+        border: none;
+        padding: 0.25rem 0.5rem;
+        color: #333;
+        font-size: 1.25rem;
+    }
+
+        .filter-icon-button:focus,
+        .filter-icon-button:active,
+        .filter-icon-button:hover {
+            background-color: transparent !important;
+            box-shadow: none !important;
+            outline: none !important;
+            color: #000;
+        }
+
+    .dropdown-menu {
+        min-width: 160px;
+        padding: 0.5rem 0;
+    }
+
+    .dropdown-item {
+        cursor: pointer;
+    }
+</style>

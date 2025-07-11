@@ -7,11 +7,13 @@
 @inject IBookingService BookingService
 @inject IUserService UserService
 @inject IJSRuntime JSRuntime
+@inject ILineupService LineupService
+@inject IArtistService ArtistService
 @inject AuthenticationStateProvider AuthProvider
 @rendermode InteractiveServer
 
-<div class="featured-header d-flex align-items-center justify-content-between" style="margin-bottom: 2rem">
-    <h3 class="featured-title">Upcoming Festivals:</h3>
+<div class="featured-header d-flex align-items-center justify-content-between">
+    <h3 class="mb-4">Upcoming Festivals</h3>
     <AuthorizeView Roles="Admin">
         <Authorized>
             <button class="add-button" @onclick="ShowCreateForm">
@@ -70,70 +72,205 @@
 
 @if (festivals.Count == 0)
 {
-    <p>No festivals found.</p>
+    <div class="alert alert-info">No festivals found.</div>
 }
 else
 {
-    <div class="festival-scroll-wrapper">
-        <div class="festival-list-container">
-            @for (int i = 0; i < festivals.Count; i++)
-            {
-                var festival = festivals[i];
-                bool isEven = i % 2 == 0;
-                <div class="festival-card d-flex flex-wrap mb-4 @(isEven ? "flex-row" : "flex-row-reverse")">
-                    <div class="festival-image-container">
-                        <img src="@festival.SplashArt" class="festival-image" alt="@festival.Name" />
-                    </div>
-                    <div class="festival-details p-3 d-flex flex-column justify-content-between">
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <h5 class="mb-0 festival-name">@festival.Name</h5>
+    <div class="festival-container">
+        @for (int i = 0; i < festivals.Count; i++)
+        {
+            var festival = festivals[i];
+            bool isEven = i % 2 == 0;
+
+            <div class="festival-card d-flex @(isEven ? "flex-row" : "flex-row-reverse")">
+                <div class="festival-image-container">
+                    <img src="@festival.SplashArt" class="festival-image" alt="@festival.Name" />
+                    <div class="festival-image-overlay"></div>
+                </div>
+
+                <div class="festival-details">
+                    <div>
+                        <div class="festival-header">
+                            <div class="festival-header-left">
+                                <h5 class="festival-name">@festival.Name</h5>
+                            </div>
                             <AuthorizeView Roles="Admin">
                                 <Authorized>
-                                    <div class="action-buttons">
-                                        <button class="btn-action" @onclick="() => ShowEditForm(festival)" title="Edit">
-                                            <i class="bi bi-pencil"></i>
-                                        </button>
-                                        <button class="btn-action" @onclick="() => ConfirmDeleteAsync(festival.Id)" title="Delete">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
+                                    <div class="festival-header-right">
+                                        <div class="action-buttons">
+                                            <button class="btn-action" @onclick="() => ShowEditForm(festival)" title="Edit">
+                                                <i class="bi bi-pencil"></i>
+                                            </button>
+                                            <button class="btn-action" @onclick="() => ConfirmDeleteAsync(festival.Id)" title="Delete">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                 </Authorized>
                             </AuthorizeView>
                         </div>
 
-                        <p class="festival-location mb-1"><strong>Location:</strong> @festival.Location</p>
-                        <p class="festival-capacity mb-1"><strong>Capacity:</strong> @festival.Capacity</p>
-                        <p class="festival-dates mb-3">
-                            <strong>Dates:</strong> 
-                            @festival.StartDate.ToString("dd MMM yyyy") - @festival.EndDate.ToString("dd MMM yyyy")
+                        <p class="festival-info"><strong>Location:</strong> @festival.Location</p>
+                        <p class="festival-info"><strong>Capacity:</strong> @festival.Capacity</p>
+                        <p class="festival-dates">
+                            <strong>📅 @festival.StartDate.ToString("dd MMM yyyy") - @festival.EndDate.ToString("dd MMM yyyy")</strong>
                         </p>
+                    </div>
 
-                        <div class="d-flex gap-2 mt-auto">
-                            <button class="btn btn-outline-primary btn-sm">View Lineup</button>
-                            <AuthorizeView>
-                                <NotAuthorized>
-                                    <a class="btn btn-secondary btn-sm" href="/login"> Buy Ticket</a>
-                                </NotAuthorized>
-                                <Authorized>
-                                    <AuthorizeView Roles="Admin" Context="AdminContext">
-                                        <Authorized>
-                                            <a class="btn btn-secondary btn-sm" href="/Bookings"> See Bookings</a>
-                                        </Authorized>
-                                    </AuthorizeView>
-                                    <AuthorizeView Roles="User" Context="UserContext">
-                                        <Authorized>
-                                            <button class="btn btn-success btn-sm" @onclick="() => BuyTicket(festival.Id, festival.Location)">Buy Ticket</button>
-                                        </Authorized>
-                                    </AuthorizeView>
-                                </Authorized>
-                            </AuthorizeView>
-                        </div>
+                    <div class="d-flex gap-2 flex-wrap">
+                        <button class="btn btn-outline-primary btn-sm" @onclick="() => ShowLineupAsync(festival.Id)">
+                            View Lineup
+                        </button>
+
+                        <AuthorizeView>
+                            <NotAuthorized>
+                                <a class="btn btn-secondary btn-sm" href="/login">
+                                    🎫 Buy Ticket
+                                </a>
+                            </NotAuthorized>
+                            <Authorized>
+                                <AuthorizeView Roles="Admin" Context="AdminContext">
+                                    <Authorized>
+                                        <a class="btn btn-secondary btn-sm" href="/Bookings">
+                                            📊 See Bookings
+                                        </a>
+                                    </Authorized>
+                                </AuthorizeView>
+
+                                <AuthorizeView Roles="User" Context="UserContext">
+                                    <Authorized>
+                                        <button class="btn btn-success btn-sm" @onclick="() => ShowBuyTicketModal(festival.Id, festival.Capacity)">
+                                            🎫 Buy Ticket
+                                        </button>
+                                    </Authorized>
+                                </AuthorizeView>
+                            </Authorized>
+                        </AuthorizeView>
                     </div>
                 </div>
-            }
+            </div>
+        }
+    </div>
+}
+
+@if (isBuyTicketModalVisible)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Buy Tickets</h5>
+                    <button type="button" class="btn-close" @onclick="CloseBuyTicketModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="ticketType" class="form-label">Ticket Type</label>
+                        <select id="ticketType" class="form-select" @bind="selectedTicketType">
+                            @foreach (var type in ticketPrices.Keys)
+                            {
+                                <option value="@type">@type (@ticketPrices[type]$)</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label">Quantity</label>
+                        <input id="quantity" type="number" min="1" max="@maxCapacity" class="form-control"
+                               @bind="selectedQuantity" />
+                        <div class="form-text">Max tickets available: @maxCapacity</div>
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(buyTicketError))
+                    {
+                        <div class="alert alert-danger">@buyTicketError</div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" @onclick="CloseBuyTicketModal">Cancel</button>
+                    <button class="btn btn-primary" @onclick="ConfirmBuyTicketAsync">Buy</button>
+                </div>
+            </div>
         </div>
     </div>
 }
+
+@if (isLineupVisible)
+{
+    <div class="modal fade show d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Festival Lineup</h5>
+                    <button type="button" class="btn-close" @onclick="CloseLineupModal"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Artist</th>
+                                <th>Genre</th>
+                                <th>Stage</th>
+                                <th>Start Time</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in currentLineup)
+                            {
+                                var artist = artistMap[item.ArtistId];
+                                <tr>
+                                    <td>@artist.Name</td>
+                                    <td>@artist.Genre</td>
+                                    <td>@item.Stage</td>
+                                    <td>@item.StartTime.ToString("dd MMM yyyy")</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+
+                    <AuthorizeView Roles="Admin">
+                        <Authorized>
+                            <hr />
+                            <h6>Add Artist to Lineup</h6>
+
+                            @if (!string.IsNullOrEmpty(buyTicketError))
+                            {
+                                <div class="alert alert-danger">@buyTicketError</div>
+                            }
+
+                            <div class="row mb-2">
+                                <div class="col">
+                                    <select class="form-select" @bind="selectedArtistId">
+                                        @foreach (var artist in allArtists)
+                                        {
+                                            <option value="@artist.Id">@artist.Name (@artist.Genre)</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col">
+                                    <select class="form-select" @bind="selectedStage">
+                                        @foreach (var stage in stageOptions)
+                                        {
+                                            <option value="@stage">@stage</option>
+                                        }
+                                    </select>
+                                </div>
+                                <div class="col">
+                                    <InputDate class="form-control" @bind-Value="selectedStartTime" />
+                                </div>
+                                <div class="col">
+                                    <button class="btn btn-success" @onclick="AddLineupAsync">
+                                        <i class="bi bi-plus-lg"></i> Add
+                                    </button>
+                                </div>
+                            </div>
+                        </Authorized>
+                    </AuthorizeView>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 
 @code {
     private FestivalCreateDto festivalFormModel { get; set; } = new();
@@ -142,6 +279,17 @@ else
     private IList<FestivalGetDto> festivals = new List<FestivalGetDto>();
     private BookingDto bookingDto = new();
     private string? userEmail;
+    private bool isBuyTicketModalVisible = false;
+    private int selectedFestivalId;
+    private int selectedQuantity = 1;
+    private string selectedTicketType = "General";
+    private int maxCapacity = 0;
+    private Dictionary<string, int> ticketPrices = new Dictionary<string, int>
+{
+    { "General", 100 },
+    { "VIP", 200 }
+};
+    private string buyTicketError = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -226,115 +374,128 @@ else
         editingFestivalId = null;
     }
 
-    private async Task BuyTicket(int festivalId, string type)
+    private void CloseBuyTicketModal()
     {
+        isBuyTicketModalVisible = false;
+        buyTicketError = "";
+    }
 
-        bookingDto.FestivalId = festivalId;
-        bookingDto.Type = type;
-        bookingDto.UserId = (int) await UserService.GetUserIdByEmailAsync(userEmail);
-        bookingDto.Price = 100;
+    private async Task ConfirmBuyTicketAsync()
+    {
+        if (selectedQuantity < 1)
+        {
+            buyTicketError = "Quantity must be at least 1.";
+            return;
+        }
+        if (selectedQuantity > maxCapacity)
+        {
+            buyTicketError = $"Cannot buy more than {maxCapacity} tickets.";
+            return;
+        }
+
+        bookingDto = new BookingDto
+        {
+            FestivalId = selectedFestivalId,
+            Type = selectedTicketType,
+            UserId = (int)await UserService.GetUserIdByEmailAsync(userEmail),
+            Price = ticketPrices[selectedTicketType] * selectedQuantity,
+            Quantity = selectedQuantity
+        };
+
         try
         {
             await BookingService.AddBookingAsync(bookingDto);
-            bookingDto = new();
+            festivalFormModel = new FestivalCreateDto()
+            {
+                Capacity = maxCapacity - selectedQuantity
+            };
+            await FestivalService.UpdateFestivalAsync(festivalFormModel, selectedFestivalId);
+            festivals = await FestivalService.GetAllFestivalsAsync();
+            festivalFormModel = new();
+            isBuyTicketModalVisible = false;
+            buyTicketError = "";
+            bookingDto = new BookingDto();
         }
-        catch(Exception ex)
+        catch (Exception ex)
         {
-			Console.WriteLine($"Error while booking ticket: {ex.Message}");
+            buyTicketError = $"Error while booking ticket: {ex.Message}";
         }
+    }
+
+    private void ShowBuyTicketModal(int festivalId, int capacity)
+    {
+        selectedFestivalId = festivalId;
+        maxCapacity = capacity;
+        selectedQuantity = 1;
+        selectedTicketType = "General";
+        buyTicketError = "";
+        isBuyTicketModalVisible = true;
+    }
+
+    private bool isLineupVisible = false;
+    private IList<LineupDto> currentLineup = new List<LineupDto>();
+    private Dictionary<int, ArtistGetDto> artistMap = new();
+    private int selectedLineupFestivalId;
+
+    private int selectedArtistId;
+    private string selectedStage = "";
+    private DateTime selectedStartTime = DateTime.Now;
+    private DateTime selectedFestivalStart;
+    private DateTime selectedFestivalEnd;
+    private IList<ArtistGetDto> allArtists = new List<ArtistGetDto>();
+    private List<string> stageOptions = new() { "Main Stage", "Side Stage", "Surprise Stage" };
+
+    private async Task ShowLineupAsync(int festivalId)
+    {
+        var festival = festivals.FirstOrDefault(f => f.Id == festivalId);
+        if (festival != null)
+        {
+            selectedFestivalStart = festival.StartDate;
+            selectedFestivalEnd = festival.EndDate;
+        }
+        selectedLineupFestivalId = festivalId;
+        currentLineup = await LineupService.GetAllLineupsAsync();
+        currentLineup = currentLineup.Where(l => l.FestivalId == selectedLineupFestivalId).ToList();
+        artistMap.Clear();
+
+        foreach (var item in currentLineup)
+        {
+            if (!artistMap.ContainsKey(item.ArtistId))
+            {
+                var artist = await ArtistService.GetArtistByIdAsync(item.ArtistId);
+                artistMap[item.ArtistId] = artist;
+            }
+        }
+        allArtists = await ArtistService.GetAllArtistsAsync();
+        selectedArtistId = allArtists.FirstOrDefault()?.Id ?? 0;
+        selectedStage = "Main Stage";
+        selectedStartTime = selectedFestivalStart;
+
+        isLineupVisible = true;
+    }
+
+    private void CloseLineupModal()
+    {
+        isLineupVisible = false;
+        artistMap.Clear();
+        buyTicketError = "";
+    }
+
+    private async Task AddLineupAsync()
+    {
+        if (currentLineup.Any(l => l.ArtistId == selectedArtistId))
+        {
+            buyTicketError = "This artist is already featured in this festival";
+            return;
+        }
+        var newLineup = new LineupDto
+        {
+            FestivalId = selectedLineupFestivalId,
+            ArtistId = selectedArtistId,
+            Stage = selectedStage,
+            StartTime = selectedStartTime
+        };
+        await LineupService.AddLineUpAsync(newLineup);
+        await ShowLineupAsync(selectedLineupFestivalId); // refresh list
     }
 }
-
-<style>
-    .festival-scroll-wrapper {
-        max-height: 70vh;
-        overflow-y: auto;
-        padding-right: 10px;
-        scroll-behavior: smooth;
-    }
-
-    .festival-list-container {
-        max-width: 100%;
-        margin: 0 auto;
-        display: flex;
-        flex-direction: column;
-        gap: 2rem;
-    }
-
-    .festival-card {
-        min-height: 280px;
-        border: 1px solid #dee2e6;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-        background: white;
-        display: flex;
-        width: 100%;
-        max-width: 950px;
-        margin-inline: auto;
-    }
-
-    .festival-image-container {
-        flex: 2;
-        max-width: 66.66%;
-        overflow: hidden;
-    }
-
-    .festival-image {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-    }
-
-    .festival-details {
-        flex: 1;
-        background: #f8f9fa;
-        min-width: 33.33%;
-    }
-
-    .festival-name {
-        font-size: 1.3rem;
-        font-weight: 500;
-        color: #2c3e50;
-    }
-
-    .festival-location {
-        font-size: 0.95rem;
-        margin-bottom: 0.75rem;
-        color: #444;
-    }
-
-    .action-buttons {
-        display: flex;
-        gap: 8px;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-
-    .festival-card:hover .action-buttons {
-        opacity: 1;
-    }
-
-    .btn-action {
-        width: 36px;
-        height: 36px;
-        background: rgba(255, 255, 255, 0.1);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-        border-radius: 50%;
-        color: #212529;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.2s ease;
-        backdrop-filter: blur(10px);
-        font-size: 0.95rem;
-    }
-
-        .btn-action:hover {
-            background: rgba(255, 255, 255, 0.2);
-            border-color: rgba(255, 255, 255, 0.4);
-            transform: scale(1.1);
-        }
-
-</style>
